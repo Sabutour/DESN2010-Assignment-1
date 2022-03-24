@@ -3,6 +3,11 @@
 #include <MFRC522.h>
 #include <Keypad.h>
 
+// General initialisation
+
+bool phase1Verified = false;
+bool phase2Verified = false;
+
 // Keypad initialisation
 const int ROW_NUM = 4; //four rows
 const int COLUMN_NUM = 4; //four columns
@@ -26,7 +31,7 @@ String input_password;
 #define SS_PIN 53
 #define RST_PIN 5
 MFRC522 mfrc522(SS_PIN, RST_PIN);   // Create MFRC522 instance.
-String required_card = "BD 31 15 2B";
+String required_card = "B3 9D 7D 15";
  
 void setup() 
 {
@@ -40,6 +45,16 @@ void setup()
 }
 void loop() 
 {
+
+  if (phase1Verified && phase2Verified) {
+    Serial.println("Two factor authenticaton complete, full access granted.");
+    delay(3000);
+    Serial.println("Locking...");
+    phase1Verified = false;
+    phase2Verified = false;
+    Serial.println("Locked.");
+  }
+
   Keypad();
   // Look for new cards
   if ( ! mfrc522.PICC_IsNewCardPresent()) 
@@ -67,13 +82,16 @@ void loop()
   if (content.substring(1) == required_card) //change here the UID of the card/cards that you want to give access
   {
     Serial.println("Card authorised. Stage 1 complete.");
+    phase1Verified = true;
     Serial.println();
-    delay(3000);
+    delay(1000);
   }
  
  else   {
     Serial.println("Access denied");
-    delay(3000);
+    phase1Verified = false;
+    phase2Verified = false;
+    delay(1000);
   }
 } 
 
@@ -90,12 +108,14 @@ void Keypad(){
     } else if(key == '#') {
       if(password == input_password) {
         Serial.println("");
-        Serial.println("Access Granted.");
-        // DO YOUR WORK HERE
+        Serial.println("Keypad authorised. Stage 2 complete.");
+        phase2Verified = true;
         
       } else {
         Serial.println("");
-        Serial.println("Access Denied.");
+        Serial.println("Incorrect PIN.");
+        phase1Verified = false;
+        phase2Verified = false;
       }
 
       input_password = ""; // clear input password
