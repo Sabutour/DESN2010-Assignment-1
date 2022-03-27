@@ -27,8 +27,10 @@ Keypad keypad = Keypad(makeKeymap(keys), pin_rows, pin_column, ROW_NUM, COLUMN_N
 const String password = "1234"; // The required password.
 String input_password;
 
+// The lists of whitelisted passwords / card IDs. Each corresponds to a user. 
+// Need to improve to make object such that each user has their own of each.
+// Currently, any combination of valid password and cardID will work.
 const char *passwords[4] = {"1234", "4321", "1111", "ABCD"};
-
 const char *cardIDs[4] = {"B3 9D 7D 15", "B1 9D 7D 15", "B4 9D 7D 15", "B2 9D 7D 15"};
 
 // RFID initialisation
