@@ -35,7 +35,6 @@ const char *cardIDs[4] = {"B3 9D 7D 15", "B1 9D 7D 15", "B4 9D 7D 15", "B2 9D 7D
 #define SS_PIN 53
 #define RST_PIN 5
 MFRC522 mfrc522(SS_PIN, RST_PIN);     // Create MFRC522 instance.
-String required_card = "B3 9D 7D 15"; // The required RFID card ID.
 
 void setup()
 {
