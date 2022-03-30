@@ -9,8 +9,8 @@
 #include <SPI.h>     // Required for RFID Reader
 #include <MFRC522.h> // Required for RFID Reader
 #include <Keypad.h>  // Required for Keypad
+#include <LiquidCrystal.h> // Required for LCD Display
 #include <User.h>    // My own little library! Required for logic.
-#include <LiquidCrystal.h>
 
 // General initialisation
 
@@ -72,6 +72,9 @@ void userSetup()
   userlist[1].SetCardID("B3 9D 7D 15");
 }
 
+// A quick little helper function to reset the
+// LCD display to clear and position the cursor
+// at the beginning.
 void clearLCD() {
   lcd.setCursor(0,0);
   lcd.print("                                      ");
