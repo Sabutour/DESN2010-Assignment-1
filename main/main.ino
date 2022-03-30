@@ -1,3 +1,5 @@
+#include <User.h>
+
 // Included libararies
 #include <SPI.h>     // Required for RFID Reader
 #include <MFRC522.h> // Required for RFID Reader
@@ -24,19 +26,23 @@ byte pin_column[COLUMN_NUM] = {31, 33, 35, 37}; // connect to the column pinouts
 
 Keypad keypad = Keypad(makeKeymap(keys), pin_rows, pin_column, ROW_NUM, COLUMN_NUM);
 
-const String password = "1234"; // The required password.
 String input_password;
 
-// The lists of whitelisted passwords / card IDs. Each corresponds to a user. 
+
+// The lists of whitelisted passwords / card IDs. Each corresponds to a user.
 // Need to improve to make object such that each user has their own of each.
 // Currently, any combination of valid password and cardID will work.
-const char *passwords[4] = {"1234", "4321", "1111", "ABCD"};
-const char *cardIDs[4] = {"B3 9D 7D 15", "B1 9D 7D 15", "B4 9D 7D 15", "B2 9D 7D 15"};
+User userlist[] = {
+  User(1, "1234", "B3 9D 7D 15"), 
+  User(2, "4321", "B1 9D 7D 15"), 
+  User(3, "1111", "B4 D4 C4 34"), 
+  User(4, "ABCD", "55 55 55 55")
+  };
 
 // RFID initialisation
 #define SS_PIN 53
 #define RST_PIN 5
-MFRC522 mfrc522(SS_PIN, RST_PIN);     // Create MFRC522 instance.
+MFRC522 mfrc522(SS_PIN, RST_PIN); // Create MFRC522 instance.
 
 void setup()
 {
@@ -48,9 +54,9 @@ void setup()
   Serial.println();
 }
 
-void unlockSignal() { // Write code to tell the user the door was unlocked.
-    
-  }
+void unlockSignal()
+{ // Write code to tell the user the door was unlocked.
+}
 
 void loop()
 {
@@ -90,13 +96,15 @@ void loop()
   }
   Serial.println();
   content.toUpperCase();
-  if (checkRFID(content.substring(1)) == true) {
+  if (checkRFID(content.substring(1)) == true)
+  {
     Serial.println("Card authorised. Stage 1 complete.");
-      Serial.println();
-      phase1Verified = true;
-      delay(1000);
+    Serial.println();
+    phase1Verified = true;
+    delay(1000);
   }
-  else {
+  else
+  {
     Serial.println("Access denied");
     phase1Verified = false;
     phase2Verified;
@@ -106,11 +114,14 @@ void loop()
 
 bool checkRFID(String to_check)
 {
-    for (int i = 0; i < 4; i++) {
-    if (to_check.c_str() == cardIDs[i]) {
+  for (int i = 0; i < 4; i++)
+  {
+    if (to_check.c_str() == "test")
+    {
       return true;
     }
-      else return false;
+    else
+      return false;
   }
 }
 
@@ -156,11 +167,15 @@ void Keypad()
   }
 }
 
-bool checkPassword(String x) {
-  for (int i = 0; i < 4; i++) {
-    if (x.c_str() == passwords[i]) {
-      return true;
-    }
-      else return false;
-  }
+bool checkPassword(String x)
+{
+  // for (int i = 0; i < 4; i++)
+  // {
+  //   if (x.c_str() == userlist[i].getPassword())
+  //   {
+  //     return true;
+  //   }
+  //   else
+  //     return false;
+  // }
 }

@@ -17,6 +17,7 @@
             "includePath": [
                 "C:\\Users\\jordm\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.8.5\\cores\\arduino",
                 "C:\\Users\\jordm\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.8.5\\variants\\mega",
+                "C:\\Users\\jordm\\OneDrive\\Documents\\Arduino\\libraries\\User",
                 "C:\\Users\\jordm\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.8.5\\libraries\\SPI\\src",
                 "C:\\Users\\jordm\\OneDrive\\Documents\\Arduino\\libraries\\MFRC522-1.4.10\\src",
                 "C:\\Users\\jordm\\OneDrive\\Documents\\Arduino\\libraries\\Keypad",
