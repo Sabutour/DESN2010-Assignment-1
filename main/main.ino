@@ -1,16 +1,24 @@
+
+
+// Jordan McDonald (u6939882) - 2022
+// Two Factor Lock Program V1
+// Special thanks to Aritro Mukherjee and Krishna Pattabiraman 
+// for their online tutorials on RFID readers and Keypads.
+
 // Included libararies
 #include <SPI.h>     // Required for RFID Reader
 #include <MFRC522.h> // Required for RFID Reader
 #include <Keypad.h>  // Required for Keypad
-#include <User.h>    // My own little library!
+#include <User.h>    // My own little library! Required for logic.
+#include <LiquidCrystal.h>
 
 // General initialisation
 
-#define TOTAL_USERS 2
-bool phase1Verified = false;
-bool phase2Verified = false;
-int current_user;
-String input_password;
+#define TOTAL_USERS 2 // Max number of whitelisted users.
+bool phase1Verified = false; // Bool for lock checking.
+bool phase2Verified = false; // Bool for lock checking.
+int current_user; // To store the current user ID for password checking.
+String input_password; // Buffer to store password being input.
 
 // Keypad initialisation
 const int ROW_NUM = 4;    // four rows
@@ -32,39 +40,63 @@ Keypad keypad = Keypad(makeKeymap(keys), pin_rows, pin_column, ROW_NUM, COLUMN_N
 // displayed. Each user has their own password and keycard which are attached to their
 // User object.
 
+// An array that will be used for user setup.
 User userlist[TOTAL_USERS];
-
-
 
 // RFID initialisation
 #define SS_PIN 53
-#define RST_PIN 5
+#define RST_PIN 48
 MFRC522 mfrc522(SS_PIN, RST_PIN); // Create MFRC522 instance.
 
-void userSetup() {
+// LCD initialisation
+const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+
+// For whatever reason, I CANNOT get these array variables to initalise
+// when I make the array. No matter what. So, my ugly but functional
+// solution is to fill the array with some dummy Users, then update
+// their information to be correct with functions built into the User.h
+// library. Theoretically the is super insecure because the passwords
+// are built here into the source code and changable, but this is
+// for demonstration purposes. I'm not a security engineer.
+void userSetup()
+{
   userlist[0] = User(-1, "", "");
   userlist[0].SetID(0);
   userlist[0].SetPassword("1234");
-  userlist[0].SetCardID("8C 72 EA 37");
+  userlist[0].SetCardID("8C 73 EA 37");
 
   userlist[1] = User(-1, "", "");
   userlist[1].SetID(1);
   userlist[1].SetPassword("ABCD");
   userlist[1].SetCardID("B3 9D 7D 15");
-
 }
 
+void clearLCD() {
+  lcd.setCursor(0,0);
+  lcd.print("                                      ");
+  lcd.setCursor(0,1);
+  lcd.print("                                      ");
+  lcd.setCursor(0,0);
+}
 
 // Serial and SPI setup
 void setup()
 {
+  lcd.begin(16, 2);
+
   userSetup();
+
   Serial.begin(9600); // Initiate a serial communication
-  Serial.println("Initialising...");  
+
   input_password.reserve(32); // The max size of password
+  
   SPI.begin();                // Initiate  SPI bus
   mfrc522.PCD_Init();         // Initiate MFRC522
-  Serial.println("Done!");
+  delay(1000);
+  clearLCD();
+  lcd.print("Present Card.");
+
   Serial.println("Awaiting card...");
   Serial.println();
 }
@@ -73,18 +105,21 @@ void setup()
 void unlockSignal()
 {
   Serial.println("Two factor authenticaton complete, full access granted. Locking in 5 seconds...");
+  clearLCD();
+  lcd.print("Access Granted.");
   delay(5000);
   Serial.println("Locking...");
   current_user = -1;
   phase1Verified = false;
   phase2Verified = false;
   Serial.println("Locked.");
+  delay(2000);
+  setup();
 }
 
 // The main code loop, runs continuously.
 void loop()
 {
-
   if (phase1Verified && phase2Verified)
   {
     unlockSignal();
@@ -102,14 +137,10 @@ void loop()
   {
     return;
   }
-  // Show UID on serial monitor
-  Serial.print("Card read. UID tag :");
   String content = "";
   byte letter;
   for (byte i = 0; i < mfrc522.uid.size; i++)
   {
-    Serial.print(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " ");
-    Serial.print(mfrc522.uid.uidByte[i], HEX);
     content.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
     content.concat(String(mfrc522.uid.uidByte[i], HEX));
   }
@@ -117,19 +148,31 @@ void loop()
   content.toUpperCase();
   if (checkRFID(content.substring(1)) == true)
   {
+    clearLCD();
+    lcd.print("Card authorised.");
+    delay(1000);
+    clearLCD();
+    lcd.print("Enter Password.");
+    lcd.setCursor(0,1);
     Serial.println("Card authorised.");
-    Serial.println();
+    Serial.print("Current User ID Number: ");
+    Serial.println(current_user);
+    Serial.println("");
     phase1Verified = true;
     delay(1000);
   }
   else
   {
+    clearLCD();
+    lcd.print("Access Denied.");
     Serial.println("Access denied");
     phase1Verified = false;
     phase2Verified;
     delay(1000);
+    setup();
   }
 }
+
 
 // Little helper function, compares the card ID with one in the database.
 bool checkRFID(String to_check)
@@ -137,7 +180,7 @@ bool checkRFID(String to_check)
   for (int i = 0; i < TOTAL_USERS; i++)
   {
     Serial.println("");
-    Serial.println("Checking ");
+    Serial.print("Checking ");
     Serial.print(to_check);
     Serial.print(" against ");
     Serial.print(userlist[i].card_id);
@@ -145,11 +188,12 @@ bool checkRFID(String to_check)
     if (to_check == userlist[i].card_id)
     {
       current_user = userlist[i].id;
-      Serial.print("Current User: ");
-      Serial.println(current_user);
-      Serial.println("");
       return true;
-    }      
+    }
+    else
+    {
+      Serial.println("No match, moving on.");
+    }
   }
   return false;
 }
@@ -160,6 +204,8 @@ void Keypad()
 
   if (key && phase1Verified == false)
   {
+    clearLCD();
+    lcd.print("Present Card.");
     Serial.println("");
     Serial.println("Please tap security card.");
     return;
@@ -167,21 +213,25 @@ void Keypad()
 
   if (key)
   {
-    // Makes sure not to print a # when the user has finished inputting a password.
+    // Makes sure not to print a # when the user has finished inputting a password or clearing the password.
     if (key != '#' && key != '*')
     {
       Serial.print('*');
+      lcd.print('*');
     }
 
     // Clears the password cache if the '*' is pressed.
     if (key == '*')
     {
       Serial.println("");
+      clearLCD();
+      lcd.print("Enter Password.");
+      lcd.setCursor(0,1);
       Serial.println("Input cleared.");
       Serial.println("");
       input_password = "";
     }
-    
+
     if (key == '#')
     {
       if (checkPassword(input_password) == true)
@@ -192,10 +242,16 @@ void Keypad()
       }
       else
       {
+        clearLCD();
+        lcd.print("Incorrect");
+        lcd.setCursor(0,1);
+        lcd.print("Password.");
         Serial.println("");
         Serial.println("Incorrect PIN.");
         phase1Verified = false;
         phase2Verified = false;
+        delay(2000);
+        setup();
       }
 
       input_password = ""; // clear input password
@@ -220,7 +276,7 @@ bool checkPassword(String x)
       Serial.println("Accepted.");
       current_user = -1;
       return true;
-    }      
+    }
   }
   Serial.println("Denied.");
   current_user = -1;
